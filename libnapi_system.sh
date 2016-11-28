@@ -96,8 +96,6 @@ system_get_forks() {
     if [ "${___g_system[$___GSYSTEM_NFORKS]}" -eq 0 ]; then
         local cores=1
 
-        _debug "wykrywam liczbe rdzeni..."
-
         # establish the number of cores
         cores=$(get_cores "$(system_get_system)")
 
@@ -126,7 +124,6 @@ system_set_forks() {
 #
 system_get_system() {
     if [ "${___g_system[$___GSYSTEM_SYSTEM]}" = 'none' ]; then
-        _debug $LINENO "weryfikuje system"
         ___g_system[$___GSYSTEM_SYSTEM]="$(get_system)"
     fi
 

@@ -34,12 +34,13 @@
 
 # common library shared between napi and subotage
 declare -r LIBNAPI_COMMON="libnapi_common.sh"
+declare -r LIBNAPI_IO="libnapi_io.sh"
 declare -r LIBNAPI_SYSTEM="libnapi_system.sh"
 declare -r LIBNAPI_TOOLS="libnapi_tools.sh"
 
 
 # verify presence of the napi_common library
-declare -r NAPI_COMMON_PATH=
+declare -r NAPI_COMMON_PATH=.
 if [ -z "$NAPI_COMMON_PATH" ] || [ ! -e "${NAPI_COMMON_PATH}/${LIBNAPI_COMMON}" ]; then
     echo
 	echo "napi.sh i subotage.sh nie zostaly poprawnie zainstalowane"
@@ -52,6 +53,7 @@ fi
 # Source the common routines.
 # Order must be maintained!
 . "${NAPI_COMMON_PATH}/${LIBNAPI_COMMON}"
+. "${NAPI_COMMON_PATH}/${LIBNAPI_IO}"
 . "${NAPI_COMMON_PATH}/${LIBNAPI_SYSTEM}"
 . "${NAPI_COMMON_PATH}/${LIBNAPI_TOOLS}"
 
@@ -334,16 +336,16 @@ parse_argv() {
                     ;;
 
                 $RET_UNAV )
-                    _warning "nie wszystkie narzedzia sa dostepne. Zainstaluj brakujace narzedzia."
+                    _warning "nie wszystkie narzedzia sa dostepne. \
+                        Zainstaluj brakujace narzedzia."
+                    return "$status"
                     ;;
 
                 *)
                     _error "nieznany blad, po wywolaniu [$funcname] ..."
+                    return "$status"
                     ;;
             esac
-
-            # shellcheck disable=SC2086
-            return $RET_FAIL
 
         # ... or set a global variable
         elif [ -n "$varname" ]; then
@@ -809,18 +811,18 @@ extract_subs_xml() {
 
     # create archive file
     local tmp_7z_archive=$(mktemp napisy.7z.XXXXXXXX)
-    echo "$subs_content" | extract_cdata_tag | io_base64_decode > "$tmp_7z_archive" 2> /dev/null
+    echo "$subs_content" | extract_cdata_tag | io_base64_decode > "$tmp_7z_archive"
 
     if [ -s "$tmp_7z_archive" ]; then
         _debug $LINENO "rozpakowuje archiwum ..."
         io_7z x -y -so -p"$napi_pass" "$tmp_7z_archive" 2> /dev/null > "$subs_path"
         status=$?
-    fi
 
-    # check 7z status
-    if [ "$status" -ne $RET_OK ]; then
-        _error "7z zwraca blad. nie mozna rozpakowac napisow"
-        rv=$RET_FAIL
+        # check 7z status
+        if [ "$status" -ne $RET_OK ]; then
+            _error "7z zwraca blad. nie mozna rozpakowac napisow"
+            rv=$RET_FAIL
+        fi
     fi
 
     # check for size
@@ -1202,7 +1204,7 @@ get_subtitles() {
     local lang="$3"
 
     # md5sum and hash calculation
-    local sum=$(dd if="$fn" bs=1024k count=10 2> /dev/null | io_stat | cut -d ' ' -f 1)
+    local sum=$(dd if="$fn" bs=1024k count=10 2> /dev/null | io_md5 | cut -d ' ' -f 1)
     local h=0
     local status=$RET_FAIL
 
@@ -1349,6 +1351,7 @@ prepare_file_list() {
     local fs=0
 
     shift
+
     for file in "$@"; do
 
         # check if file exists, if not skip it
@@ -1363,6 +1366,7 @@ prepare_file_list() {
         # if so, then recursively search the dir
         elif [ -d "$file" ]; then
             local tmp="$file"
+            _debug $LINENO "przeszukuje katalog [$file]"
             prepare_file_list "$min_size" "$tmp"/*
 
         else
@@ -1370,8 +1374,8 @@ prepare_file_list() {
             ve=$(verify_extension "$file")
             fs=$(io_stat "$file")
 
-            if [ "$ve" -eq 1 ] &&
-               [ "$fs" -ge $(( min_size*1024*1024 )) ]; then
+            if [ "${ve:-0}" -eq 1 ] &&
+               [ "${fs:-0}" -ge $(( min_size*1024*1024 )) ]; then
                 # g_files+=( "$file" )
                 g_files=( "${g_files[@]}" "$file" )
             fi

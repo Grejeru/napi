@@ -31,7 +31,6 @@
 ########################################################################
 ########################################################################
 
-
 declare -r ___GIO_UNLINK=0
 declare -r ___GIO_STAT=1
 declare -r ___GIO_BASE64=2
@@ -50,10 +49,7 @@ declare -a ___g_io=( 'none' 'none' 'none' \
 #
 io_configure_unlink() {
     # check unlink command
-    _debug $LINENO "sprawdzam obecnosc unlink"
-
     if ! tools_is_detected "unlink"; then
-        _info $LINENO 'brak unlink, unlink = rm' &&
         ___g_io[$___GIO_UNLINK]='rm -rf'
     else
         ___g_io[$___GIO_UNLINK]='unlink'
@@ -67,16 +63,14 @@ io_configure_unlink() {
 # configure the stat tool
 #
 io_configure_stat() {
-    _debug $LINENO "konfiguruje stat"
-
     # verify stat tool
-    ___g_io[$___GIO_STAT]="stat -c%s"
+    ___g_io[$___GIO_STAT]="stat -c%s "
 
     if system_is_darwin; then
         # stat may be installed through macports, check if
         # there's a need to reconfigure it to BSD flavour
         "${___g_io[$___GIO_STAT]}" "$0" > /dev/null 2>&1 &&
-            ___g_io[$___GIO_STAT]="stat -f%z"
+            ___g_io[$___GIO_STAT]="stat -f%z "
     fi
 
     # shellcheck disable=SC2086
@@ -87,9 +81,7 @@ io_configure_stat() {
 # configure the base64 tool
 #
 io_configure_base64() {
-    _debug $LINENO "sprawdzam base64"
-
-    g_cmd_base64_decode="base64 -d"
+    ___g_io[$___GIO_BASE64]="base64 -d"
     # verify base64 & md5 tool
     system_is_darwin && ___g_io[$___GIO_BASE64]="base64 -D"
 
@@ -101,8 +93,6 @@ io_configure_base64() {
 # configure the md5 tool
 #
 io_configure_md5() {
-    _debug $LINENO "konfiguruje md5"
-
     # verify md5 tool
     ___g_io[$___GIO_MD5]="md5sum"
     system_is_darwin && ___g_io[$___GIO_MD5]="md5"
@@ -117,15 +107,11 @@ io_configure_md5() {
 io_configure_7z() {
     local k=''
 
-    # check 7z command
-    _debug $LINENO "sprawdzam narzedzie 7z"
-
     # use 7z or 7za only, 7zr doesn't support passwords
     declare -a t7zs=( '7za' '7z' )
 
     for k in "${t7zs[@]}"; do
         tools_is_detected "$k" &&
-            _info $LINENO "7z wykryty jako [$k]" &&
             ___g_io[$___GIO_7Z]="$k" &&
             break
     done
@@ -137,17 +123,11 @@ io_configure_wget() {
     local wget_cmd='wget -q -O'
     local wget_post=0
 
-    _debug $LINENO "sprawdzam czy wget wspiera opcje -S"
     local s_test=$(wget --help 2>&1 | grep "\-S")
-    [ -n "$s_test" ] &&
-        wget_cmd='wget -q -S -O' &&
-        _info $LINENO "wget wspiera opcje -S"
+    [ -n "$s_test" ] && wget_cmd='wget -q -S -O'
 
-    _debug $LINENO "sprawdzam czy wget wspiera zadania POST"
     local p_test=$(wget --help 2>&1 | grep "\-\-post\-")
-    [ -n "$p_test" ] &&
-        wget_post=1 &&
-        _info $LINENO "wget wspiera zadania POST"
+    [ -n "$p_test" ] && wget_post=1
 
     # Entry format is:
     # <POST_SUPPORT=0|1>|<WGET_CMD>
@@ -348,24 +328,20 @@ io_set_fps_tool() {
 
 io_verify_fps_tool() {
     # fps tool verification
-    _debug $LINENO 'sprawdzam wybrane narzedzie fps'
 
     # don't do anything if the tool has been already marked as unavailable
     [ "${___g_io[$___GIO_FPS]}" = 'unavailable' ] &&
-        _debug $LINENO 'narzedzie oznaczone jako niedostepne' &&
         return $RET_UNAV
 
     # verify selected fps tool
     if [ "${___g_io[$___GIO_FPS]}" != 'none' ]; then
         ! tools_is_in_group_and_detected &&
-            _error "podane narzedzie jest niewspierane lub niedostepne" &&
             return $RET_PARAM
     else
         # choose first available as the default tool
         local firstav=''
         firstav=$(tools_first_available_from_group "fps")
         [ -z "$firstav" ] &&
-            _error "brak narzedzi do wykrywania fps" &&
             return $RET_PARAM
 
          ___g_io[$___GIO_FPS]="$firstav"
@@ -378,7 +354,6 @@ io_verify_fps_tool() {
 
 io_get_fps() {
     [ "${___g_io[$___GIO_WGET]}" = 'none' ] && io_verify_fps_tool
-    _info $LINENO "wykrywam fps uzywajac: ${___g_io[$___GIO_FPS]}"
     io_get_fps_with_tool "${___g_io[$___GIO_FPS]}" "$@"
 }
 

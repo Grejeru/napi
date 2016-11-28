@@ -31,23 +31,3 @@
 ########################################################################
 ########################################################################
 
-declare -a ___g_settings=()
-
-
-settings_set() {
-
-}
-
-
-#
-# @brief get the setting's value or return "default"
-# value if it doesn't exist
-#
-# @param setting
-# @param default value
-#
-settings_get() {
-
-}
-
-
