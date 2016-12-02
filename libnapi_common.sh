@@ -36,7 +36,6 @@ declare -r g_revision="v1.3.6"
 ########################################################################
 ########################################################################
 
-
 ################################## GLOBALS #####################################
 
 declare -r ___GOUTPUT_VERBOSITY=0
@@ -708,6 +707,26 @@ verify_extension() {
     # shellcheck disable=SC2086
     return $RET_OK
 }
+
+#
+# @brief get extension for given subtitle format
+#
+get_sub_ext() {
+    local status=0
+    declare -a fmte=( 'subrip=srt' 'subviewer2=sub' )
+
+    # this function can cope with that kind of input
+    # shellcheck disable=SC2068
+    lookup_value "$1" ${fmte[@]}
+    status=$?
+
+    # shellcheck disable=SC2086
+    [ "$status" -ne $RET_OK ] && settings_get default_extension
+
+    # shellcheck disable=SC2086
+    return $RET_OK
+}
+
 
 ################################## DB ##########################################
 

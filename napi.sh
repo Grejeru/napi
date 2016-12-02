@@ -37,6 +37,7 @@ declare -r LIBNAPI_COMMON="libnapi_common.sh"
 declare -r LIBNAPI_IO="libnapi_io.sh"
 declare -r LIBNAPI_SYSTEM="libnapi_system.sh"
 declare -r LIBNAPI_TOOLS="libnapi_tools.sh"
+declare -r LIBNAPI_SETTINGS="napi_settings.sh"
 
 
 # verify presence of the napi_common library
@@ -52,10 +53,12 @@ fi
 
 # Source the common routines.
 # Order must be maintained!
+. "${NAPI_COMMON_PATH}/${LIBNAPI_SETTINGS}"
+
+. "${NAPI_COMMON_PATH}/${LIBNAPI_TOOLS}"
 . "${NAPI_COMMON_PATH}/${LIBNAPI_COMMON}"
 . "${NAPI_COMMON_PATH}/${LIBNAPI_IO}"
 . "${NAPI_COMMON_PATH}/${LIBNAPI_SYSTEM}"
-. "${NAPI_COMMON_PATH}/${LIBNAPI_TOOLS}"
 
 ################################################################################
 
@@ -68,11 +71,6 @@ fi
 #   only for the converted subtitles
 #
 declare -a g_abbrev=( "" "" )
-
-#
-# @brief prefix for the original file - before the conversion
-#
-declare g_orig_prefix='ORIG_'
 
 #
 # @brief minimum size of files to be processed
@@ -98,11 +96,6 @@ declare g_skip=0
 # @brief whether to delete the original file after conversion
 #
 declare g_delete_orig=0
-
-#
-# @brief default subtitles extension
-#
-declare g_default_ext='txt'
 
 #
 # @brief subtitles format
@@ -175,25 +168,6 @@ trap_control_c() {
 }
 
 
-#
-# @brief get extension for given subtitle format
-#
-get_sub_ext() {
-    local status=0
-    declare -a fmte=( 'subrip=srt' 'subviewer2=sub' )
-
-    # this function can cope with that kind of input
-    # shellcheck disable=SC2068
-    lookup_value "$1" ${fmte[@]}
-    status=$?
-
-    # shellcheck disable=SC2086
-    [ "$status" -ne $RET_OK ] && echo $g_default_ext
-
-    # shellcheck disable=SC2086
-    return $RET_OK
-}
-
 #################################### ARGV ######################################
 
 #
@@ -244,7 +218,7 @@ parse_argv() {
             ;;
 
             # extension
-            "-e" | "--ext") varname="g_default_ext"
+            "-e" | "--ext") varname="__g_settings_default_extension"
             msg="nie okreslono domyslnego rozszerzenia dla pobranych plikow"
             ;;
 
@@ -293,7 +267,7 @@ parse_argv() {
             ;;
 
             # orig prefix
-            "-o" | "--orig-prefix") varname="g_orig_prefix"
+            "-o" | "--orig-prefix") varname="__g_settings_orig_prefix"
             msg="nie określono domyslnego prefixu"
             ;;
 
@@ -1417,23 +1391,23 @@ prepare_filenames() {
     # original_file (o) - as download from napiprojekt.pl (with extension changed only)
     # abbreviation (a)
     # conversion abbreviation (A)
-    # prefix (p) - g_orig_prefix for the original file
+    # prefix (p) - __g_settings_orig_prefix for the original file
     # converted_file (c) - filename with converted subtitles format (may have differect extension)
     #
-    # 0 - o - filename + g_default_ext
-    # 1 - o + a - filename + abbreviation + g_default_ext
-    # 2 - p + o - g_orig_prefix + filename + g_default_ext
-    # 3 - p + o + a - g_orig_prefix + filename + abbreviation + g_default_ext
+    # 0 - o - filename + __g_settings_default_extension
+    # 1 - o + a - filename + abbreviation + __g_settings_default_extension
+    # 2 - p + o - __g_settings_orig_prefix + filename + __g_settings_default_extension
+    # 3 - p + o + a - __g_settings_orig_prefix + filename + abbreviation + __g_settings_default_extension
     # 4 - c - filename + get_sub_ext
     # 5 - c + a - filename + abbreviation + get_sub_ext
     # 6 - c + A - filename + conversion_abbreviation + get_sub_ext
     # 7 - c + a + A - filename + abbreviation + conversion_abbreviation + get_sub_ext
 
     # original
-    g_pf[0]="${noext}.$g_default_ext"
-    g_pf[1]="${noext}.${ab:+$ab.}$g_default_ext"
-    g_pf[2]="${g_orig_prefix}${g_pf[0]}"
-    g_pf[3]="${g_orig_prefix}${g_pf[1]}"
+    g_pf[0]="${noext}.${__g_settings_default_extension}"
+    g_pf[1]="${noext}.${ab:+$ab.}${__g_settings_default_extension}"
+    g_pf[2]="${__g_settings_orig_prefix}${g_pf[0]}"
+    g_pf[3]="${__g_settings_orig_prefix}${g_pf[1]}"
 
     # converted
     g_pf[4]="${noext}.$cext"
@@ -1998,7 +1972,7 @@ usage() {
         echo "   -d  | --delete-orig - Delete the original file"
         echo "   -f  | --format - konwertuj napisy do formatu (wym. subotage.sh)"
         echo "   -P  | --pref-fps <fps_tool> - preferowany detektor fps (jezeli wykryto jakikolwiek)"
-        echo "   -o  | --orig-prefix - prefix dla oryginalnego pliku przed konwersja (domyslnie: $g_orig_prefix)"
+        echo "   -o  | --orig-prefix - prefix dla oryginalnego pliku przed konwersja (domyslnie: $__g_settings_orig_prefix)"
         echo "       | --conv-abbrev <string> - dodaj dowolny string przed rozszerzeniem podczas konwersji formatow"
         echo
         echo "Obslugiwane formaty konwersji napisow"

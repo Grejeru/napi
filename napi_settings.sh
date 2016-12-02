@@ -31,3 +31,15 @@
 ########################################################################
 ########################################################################
 
+#
+# @brief default extension used for subtitle files
+#
+# Will be forced to lowercase when assigned
+#
+declare -l __g_settings_default_extension='txt'
+
+#
+# @brief prefix for the original file - before the conversion
+#
+declare __g_settings_orig_prefix='ORIG_'
+
