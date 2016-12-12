@@ -84,7 +84,7 @@ declare -r RET_NOACT=251
 #
 # @brief count the number of lines in a file
 #
-count_lines() {
+common_count_lines() {
 
     # it is being executed in a subshell to strip any leading white spaces
     # which some of the wc versions produce
@@ -98,7 +98,7 @@ count_lines() {
 #
 # @brief lowercase the input
 #
-lcase() {
+common_lcase() {
     # some old busybox implementations have problems with locales
     # which renders that syntax unusable
     # tr '[:upper:]' '[:lower:]'
@@ -112,7 +112,7 @@ lcase() {
 #
 # @brief get rid of the newline/carriage return
 #
-strip_newline() {
+common_strip_newline() {
     tr -d '\r\n'
 }
 
@@ -120,7 +120,7 @@ strip_newline() {
 #
 # @brief get the extension of the input
 #
-get_ext() {
+common_get_ext() {
     echo "${1##*.}"
 }
 
@@ -128,7 +128,7 @@ get_ext() {
 #
 # @brief strip the extension of the input
 #
-strip_ext() {
+common_strip_ext() {
     echo "${1%.*}"
 }
 
@@ -136,7 +136,7 @@ strip_ext() {
 #
 # @brief get the value from strings like group:key=value or key=value
 #
-get_value() {
+common_get_value() {
     echo "${1##*=}"
 }
 
@@ -144,7 +144,7 @@ get_value() {
 #
 # @brief get the key from strings like group:key=value or key=value
 #
-get_key() {
+common_get_key() {
     local k="${1%=*}"
     echo "${k#*:}"
 }
@@ -153,7 +153,7 @@ get_key() {
 #
 # @brief get the group from strings like group:key=value or key=value
 #
-get_group() {
+common_get_group() {
     local k="${1%=*}"
     echo "${k%%:*}"
 }
@@ -162,7 +162,7 @@ get_group() {
 #
 # @brief extract a key=value from an entry of form [group:]key=value
 #
-get_kv_pair() {
+common_get_kv_pair() {
     echo "${1##*:}"
 }
 
@@ -170,7 +170,7 @@ get_kv_pair() {
 #
 # @brief returns numeric value even for non-numeric input
 #
-ensure_numeric() {
+common_ensure_numeric() {
     echo $(( $1 + 0 ))
 }
 
@@ -180,7 +180,7 @@ ensure_numeric() {
 # @param key
 # @param array
 #
-lookup_value() {
+common_lookup_value() {
     local i=''
     local rv=$RET_FAIL
     local key="$1" && shift
@@ -236,7 +236,7 @@ _group_lookup_generic() {
 # @param group
 # @param array
 #
-lookup_group_keys() {
+common_lookup_group_keys() {
     local group="${1}" && shift
     _group_lookup_generic "$group" "get_key" "$@"
 }
@@ -247,7 +247,7 @@ lookup_group_keys() {
 # @param group
 # @param array
 #
-lookup_group_kv() {
+common_lookup_group_kv() {
     local group="${1}" && shift
     _group_lookup_generic "$group" "get_kv_pair" "$@"
 }
@@ -257,7 +257,7 @@ lookup_group_kv() {
 # @brief lookup index in the array for given value
 # returns the index of the value and 0 on success
 #
-lookup_key() {
+common_lookup_key() {
     local i=''
     local idx=0
     local rv=$RET_FAIL
@@ -281,7 +281,7 @@ lookup_key() {
 # @param value
 # @param array
 #
-modify_value() {
+common_modify_value() {
     local key=$1 && shift
     local value=$1 && shift
 
@@ -306,7 +306,7 @@ modify_value() {
 #
 # determines number of available cpu's in the system
 #
-get_cores() {
+common_get_cores() {
     local os="${1:-linux}"
 
     if [ "$os" = "darwin" ]; then
@@ -321,7 +321,7 @@ get_cores() {
 #
 # @brief detects running system type
 #
-get_system() {
+common_get_system() {
     uname | lcase
 }
 
@@ -329,7 +329,7 @@ get_system() {
 #
 # @brief extracts http status from the http headers
 #
-get_http_status() {
+common_get_http_status() {
     # grep -o "HTTP/[\.0-9]* [0-9]*"
     awk '{ m = match($0, /HTTP\/[\.0-9]* [0-9]*/); if (m) print substr($0, m, RLENGTH) }'
 }
@@ -416,7 +416,7 @@ _status() {
 #
 # @brief redirect errors to standard error output
 #
-to_stderr() {
+common_to_stderr() {
     if [ -n "${___g_output[$___GOUTPUT_LOGFILE]}" ] && [ "${___g_output[$___GOUTPUT_LOGFILE]}" != "none" ]; then
         cat
     else
@@ -428,7 +428,7 @@ to_stderr() {
 #
 # @brief redirect stdout to logfile
 #
-redirect_to_logfile() {
+common_redirect_to_logfile() {
     if [ -n "${___g_output[$___GOUTPUT_LOGFILE]}" ] && [ "${___g_output[$___GOUTPUT_LOGFILE]}" != "none" ]; then
         # truncate
         cat /dev/null > "${___g_output[$___GOUTPUT_LOGFILE]}"
@@ -442,7 +442,7 @@ redirect_to_logfile() {
 #
 # @brief redirect output to stdout
 #
-redirect_to_stdout() {
+common_redirect_to_stdout() {
     # restore everything
     [ -n "${___g_output[$___GOUTPUT_LOGFILE]}" ] &&
     [ "${___g_output[$___GOUTPUT_LOGFILE]}" != "none" ] &&
@@ -453,35 +453,35 @@ redirect_to_stdout() {
 
 ################################## FLOAT CMP ###################################
 
-float_lt() {
+common_float_lt() {
     awk -v n1="$1" -v n2="$2" 'BEGIN{ if (n1<n2) exit 0; exit 1}'
 }
 
 
-float_gt() {
+common_float_gt() {
     awk -v n1="$1" -v n2="$2" 'BEGIN{ if (n1>n2) exit 0; exit 1}'
 }
 
 
-float_le() {
+common_float_le() {
     awk -v n1="$1" -v n2="$2" 'BEGIN{ if (n1<=n2) exit 0; exit 1}'
 }
 
 
-float_ge() {
+common_float_ge() {
     awk -v n1="$1" -v n2="$2" 'BEGIN{ if (n1>=n2) exit 0; exit 1}'
 }
 
 
-float_eq() {
+common_float_eq() {
     awk -v n1="$1" -v n2="$2" 'BEGIN{ if (n1==n2) exit 0; exit 1}'
 }
 
-float_div() {
+common_float_div() {
     awk -v n1="$1" -v n2="$2" 'BEGIN { print n1/n2 }'
 }
 
-float_mul() {
+common_float_mul() {
     awk -v n1="$1" -v n2="$2" 'BEGIN { print n1*n2 }'
 }
 
@@ -490,7 +490,7 @@ float_mul() {
 #
 # @brief checks if the tool is available in the PATH
 #
-verify_tool_presence() {
+common_verify_tool_presence() {
     local tool=$(builtin type -p "$1")
     local rv=$RET_UNAV
 
@@ -508,7 +508,7 @@ verify_tool_presence() {
 #
 # @brief check function presence
 #
-verify_function_presence() {
+common_verify_function_presence() {
     local tool=$(builtin type -t "$1")
     local rv=$RET_UNAV
     local status=0
@@ -532,7 +532,7 @@ verify_function_presence() {
 #
 # Automatically fall back to standard level if given level is out of range.
 #
-output_set_verbosity() {
+common_output_set_verbosity() {
     ___g_output[$___GOUTPUT_VERBOSITY]=$(ensure_numeric "$1")
     output_verify_verbosity || ___g_output[$___GOUTPUT_VERBOSITY]=1
     [ ${___g_output[$___GOUTPUT_VERBOSITY]} -eq 4 ] && _debug_insane
@@ -543,7 +543,7 @@ output_set_verbosity() {
 #
 # @brief get the output verbosity level
 #
-output_get_verbosity() {
+common_output_get_verbosity() {
     echo "${___g_output[$___GOUTPUT_VERBOSITY]}"
     return $RET_OK
 }
@@ -551,7 +551,7 @@ output_get_verbosity() {
 #
 # @brief verify if given verbosity level is in supported range
 #
-output_verify_verbosity() {
+common_output_verify_verbosity() {
     # make sure first that the printing functions will work
     _debug $LINENO 'sprawdzam poziom gadatliwosci'
     case "${___g_output[$___GOUTPUT_VERBOSITY]}" in
@@ -570,7 +570,7 @@ output_verify_verbosity() {
 #
 # @brief set logging to a file or stdout
 #
-output_set_logfile() {
+common_output_set_logfile() {
     if [ "${___g_output[$___GOUTPUT_LOGFILE]}" != "$1" ]; then
         _info $LINENO "ustawiam STDOUT"
         redirect_to_stdout
@@ -586,7 +586,7 @@ output_set_logfile() {
 #
 # @brief verify if given logging file can be used
 #
-output_verify_logfile() {
+common_output_verify_logfile() {
     _debug $LINENO 'sprawdzam logfile'
     if [ -e "${___g_output[$___GOUTPUT_LOGFILE]}" ] &&
        [ "${___g_output[$___GOUTPUT_LOGFILE]}" != "none" ]; then
@@ -607,7 +607,7 @@ output_verify_logfile() {
 #
 # @brief set fork id
 #
-output_set_fork_id() {
+common_output_set_fork_id() {
     ___g_output[$___GOUTPUT_FORKID]=$(ensure_numeric "$1")
     return $RET_OK
 }
@@ -616,7 +616,7 @@ output_set_fork_id() {
 #
 # @brief get fork id of the current process
 #
-output_get_fork_id() {
+common_output_get_fork_id() {
     echo "${___g_output[$___GOUTPUT_FORKID]}"
     return $RET_OK
 }
@@ -625,7 +625,7 @@ output_get_fork_id() {
 #
 # @brief set message counter
 #
-output_set_msg_counter() {
+common_output_set_msg_counter() {
     ___g_output[$___GOUTPUT_MSGCNT]=$(ensure_numeric "$1")
     return $RET_OK
 }
@@ -634,7 +634,7 @@ output_set_msg_counter() {
 #
 # @brief get message counter
 #
-output_get_msg_counter() {
+common_output_get_msg_counter() {
     echo "${___g_output[$___GOUTPUT_MSGCNT]}"
     return $RET_OK
 }
@@ -643,7 +643,7 @@ output_get_msg_counter() {
 #
 # @brief set log overwrite to given value
 #
-output_set_log_overwrite() {
+common_output_set_log_overwrite() {
     ___g_output[$___GOUTPUT_OWRT]=$(ensure_numeric "$1")
     return $RET_OK
 }
@@ -652,7 +652,7 @@ output_set_log_overwrite() {
 #
 # @brief set log overwrite to true
 #
-output_raise_log_overwrite() {
+common_output_raise_log_overwrite() {
     output_set_log_overwrite 1
     return $RET_OK
 }
@@ -661,7 +661,7 @@ output_raise_log_overwrite() {
 #
 # @brief set log overwrite to false
 #
-output_clear_log_overwrite() {
+common_output_clear_log_overwrite() {
     output_set_log_overwrite 0
     return $RET_OK
 }
@@ -671,7 +671,7 @@ output_clear_log_overwrite() {
 #
 # @brief inform that we're using new API now
 #
-print_new_api_info() {
+common_print_new_api_info() {
     _msg "================================================="
     _msg "$0 od wersji 1.3.1 domyslnie uzywa nowego"
     _msg "API (napiprojekt-3)"
@@ -689,7 +689,7 @@ print_new_api_info() {
 # @param: video filename
 # @return: bool 1 - is video file, 0 - is not a video file
 #
-verify_extension() {
+common_verify_extension() {
     local filename=$(basename "$1")
     local extension=$(get_ext "$filename" | lcase)
     local is_video=0
@@ -711,7 +711,7 @@ verify_extension() {
 #
 # @brief get extension for given subtitle format
 #
-get_sub_ext() {
+common_get_sub_ext() {
     local status=0
     declare -a fmte=( 'subrip=srt' 'subviewer2=sub' )
 
@@ -722,6 +722,90 @@ get_sub_ext() {
 
     # shellcheck disable=SC2086
     [ "$status" -ne $RET_OK ] && settings_get default_extension
+
+    # shellcheck disable=SC2086
+    return $RET_OK
+}
+
+#
+# @brief wrapper for wget
+# @param url
+# @param output file
+# @param POST data - if set the POST request will be done instead of GET (default)
+#
+# @requiers libnapi_io
+#
+# returns the http code(s)
+#
+common_download_url() {
+    local url="$1"
+    local output="$2"
+    local post="$3"
+    local headers=""
+    local rv=$RET_OK
+    local code='unknown'
+
+    local status=$RET_FAIL
+
+    # determine whether to perform a GET or a POST
+    if [ -z "$post" ]; then
+        headers=$(io_wget "$output" "$url" 2>&1)
+        status=$?
+    elif io_wget_is_post_available; then
+        headers=$(io_wget "$output" --post-data="$post" "$url" 2>&1)
+        status=$?
+    fi
+
+    # check the status of the command
+    if [ "$status" -eq $RET_OK ]; then
+        # check the headers
+        if [ -n "$headers" ]; then
+            rv=$RET_FAIL
+            code=$(echo "$headers" | \
+                get_http_status | \
+                cut -d ' ' -f 2)
+
+            # do that to force the shell to get rid of new lines and spaces
+            code=$(echo $code)
+
+            # shellcheck disable=SC2143
+            # shellcheck disable=SC2086
+            [ -n "$(echo $code | grep 200)" ] && rv=$RET_OK
+        fi
+    else
+        rv=$RET_FAIL
+    fi
+
+    echo "$code"
+    return "$rv"
+}
+
+#
+# @brief run awk code
+# @param awk code
+# @param (optional) file - if no file - process the stream
+#
+common_run_awk_script() {
+    local awk_script="${1:-}"
+    local file_path="${2:-}"
+    local num_arg=$#
+
+    # 0 - file
+    # 1 - stream
+    local input_type=0
+
+    # detect number of arguments
+    [ "$num_arg" -eq 1 ] && [ ! -e "$file_path" ] && input_type=1
+
+    # bail out if awk is not available
+    tools_is_detected "awk" || return $RET_FAIL
+
+    # process a stream or a file
+    if [ "$input_type" -eq 0 ]; then
+        awk "$awk_script" "$file_path"
+    else
+        awk "$awk_script"
+    fi
 
     # shellcheck disable=SC2086
     return $RET_OK
